@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "app/middleware.ts": {
+      "runtime": "edge"
+    }
+  }
+} 
