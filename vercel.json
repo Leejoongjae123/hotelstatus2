@@ -1,7 +1,7 @@
 {
   "functions": {
     "app/middleware.ts": {
-      "runtime": "edge"
+      "runtime": "nodejs20.x"
     }
   }
 } 
