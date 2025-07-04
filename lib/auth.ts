@@ -1,34 +1,99 @@
-// 토큰 관련 유틸리티
-export const getToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token');
-};
+import { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
 
-export const setToken = (token: string): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('token', token);
-  
-  // 쿠키에도 토큰 저장 (미들웨어에서 확인용)
-  document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
-};
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export const removeToken = (): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem('token');
-  
-  // 쿠키에서도 토큰 제거
-  document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-};
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: {
+        email: { label: '이메일', type: 'email' },
+        password: { label: '비밀번호', type: 'password' }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
-export const isAuthenticated = (): boolean => {
-  return getToken() !== null;
-};
+        if (!API_BASE_URL) {
+          console.error('API_BASE_URL이 설정되지 않았습니다.');
+          return null;
+        }
 
-// API 호출을 위한 헤더 생성
-export const getAuthHeaders = () => {
-  const token = getToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
+        try {
+          const response = await fetch(`${API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          });
+
+          if (!response.ok) {
+            return null;
+          }
+
+          const loginData = await response.json();
+
+          if (!loginData.access_token) {
+            return null;
+          }
+
+          // 사용자 정보 가져오기
+          const userResponse = await fetch(`${API_BASE_URL}/users/me`, {
+            headers: {
+              'Authorization': `Bearer ${loginData.access_token}`,
+            },
+          });
+
+          if (!userResponse.ok) {
+            return null;
+          }
+
+          const userData = await userResponse.json();
+
+          return {
+            id: userData.id.toString(),
+            email: userData.email,
+            name: userData.full_name || userData.username,
+            role: userData.role,
+            accessToken: loginData.access_token,
+          };
+        } catch (error) {
+          console.error('인증 중 오류 발생:', error);
+          return null;
+        }
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.accessToken = (user as any).accessToken;
+        token.role = (user as any).role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.accessToken = token.accessToken as string;
+        session.user.role = token.role as string;
+      }
+      return session;
+    },
+  },
+  pages: {
+    signIn: '/login',
+    error: '/login', // 에러 시 로그인 페이지로 리다이렉트
+  },
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24시간
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
 }; 

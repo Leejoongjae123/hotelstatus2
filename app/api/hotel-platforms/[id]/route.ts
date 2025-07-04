@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -54,29 +56,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
-    const authHeader = request.headers.get('authorization');
+    const session = await getServerSession(authOptions);
 
-    if (!authHeader) {
+    if (!session?.accessToken) {
       return NextResponse.json(
-        { error: '인증 토큰이 필요합니다.' },
+        { error: '인증이 필요합니다.' },
         { status: 401 }
       );
     }
 
     const body = await request.json();
 
-    // status 필드가 없으면 기본값 설정
-    if (!body.status) {
-      body.status = 'active';
-    }
-
     const response = await fetch(`${API_BASE_URL}/hotel-platforms/${id}`, {
       method: 'PUT',
       headers: {
-        'Authorization': authHeader,
+        'Authorization': `Bearer ${session.accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
@@ -110,14 +110,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
-    const authHeader = request.headers.get('authorization');
+    const session = await getServerSession(authOptions);
 
-    if (!authHeader) {
+    if (!session?.accessToken) {
       return NextResponse.json(
-        { error: '인증 토큰이 필요합니다.' },
+        { error: '인증이 필요합니다.' },
         { status: 401 }
       );
     }
@@ -125,14 +128,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const response = await fetch(`${API_BASE_URL}/hotel-platforms/${id}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': authHeader,
+        'Authorization': `Bearer ${session.accessToken}`,
         'Content-Type': 'application/json',
       },
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
+      const data = await response.json();
       let errorMessage = '호텔 플랫폼 정보를 삭제할 수 없습니다.';
       
       if (data.detail) {
@@ -149,7 +151,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({ message: '삭제되었습니다.' });
   } catch (error) {
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },

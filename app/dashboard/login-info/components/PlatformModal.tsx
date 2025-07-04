@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '@/store/auth';
+import { useSession } from 'next-auth/react';
 import { Platform } from '@/app/types';
 import { PlatformModalProps, PlatformFormData } from './types';
 import {
@@ -54,9 +54,8 @@ export default function PlatformModal({
   // 초기값을 기본 플랫폼 목록으로 설정
   const [platforms, setPlatforms] = useState<Platform[]>(DEFAULT_PLATFORMS);
   const [loading, setLoading] = useState(false);
-  const [loadingPlatforms, setLoadingPlatforms] = useState(false);
   const [error, setError] = useState('');
-  const { token } = useAuthStore();
+  const { data: session } = useSession();
 
   const mfaPlatforms = [
     { value: '구글', name: '구글' },
@@ -71,7 +70,9 @@ export default function PlatformModal({
 
   useEffect(() => {
     if (isOpen) {
-      fetchPlatforms();
+      // 기본 플랫폼 목록으로 초기화 (API 호출 제거)
+      setPlatforms(DEFAULT_PLATFORMS);
+      
       if (editingPlatform) {
         setFormData({
           platform: editingPlatform.platform,
@@ -99,31 +100,13 @@ export default function PlatformModal({
     }
   }, [isOpen, editingPlatform]);
 
-  const fetchPlatforms = async () => {
-    try {
-      setLoadingPlatforms(true);
-      const response = await fetch('/api/hotel-platforms');
-      
-      if (!response.ok) {
-        // API가 실패하면 기본 플랫폼 목록 유지
-        return;
-      }
-
-      const data = await response.json();
-      setPlatforms(data);
-    } catch (error) {
-      // 플랫폼 목록을 가져오지 못하면 기본 목록 유지
-      console.log('플랫폼 목록 로딩 실패, 기본 목록 사용');
-    } finally {
-      setLoadingPlatforms(false);
-    }
-  };
+  // fetchPlatforms 함수 제거 (더 이상 사용하지 않음)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!token) {
-      setError('인증 토큰이 없습니다.');
+    if (!session) {
+      setError('인증이 필요합니다.');
       return;
     }
 
@@ -160,7 +143,6 @@ export default function PlatformModal({
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(requestBody),
       });
@@ -211,7 +193,7 @@ export default function PlatformModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 플랫폼 선택 (수정 시 비활성화) */}
           <div className="space-y-2">
-            <Label htmlFor="platform">플랫폼 <span className="text-red-500">*</span></Label>
+            <Label htmlFor="platform">플랫폼 <span className="text-destructive">*</span></Label>
             {editingPlatform ? (
               <Input 
                 value={platforms.find(p => p.value === formData.platform)?.name || formData.platform}
@@ -222,10 +204,9 @@ export default function PlatformModal({
               <Select 
                 value={formData.platform} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, platform: value }))}
-                disabled={loadingPlatforms}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder={loadingPlatforms ? "플랫폼 목록 로딩 중..." : "플랫폼을 선택해주세요"} />
+                  <SelectValue placeholder="플랫폼을 선택해주세요" />
                 </SelectTrigger>
                 <SelectContent>
                   {platforms.map((platform) => (
@@ -240,7 +221,7 @@ export default function PlatformModal({
 
           {/* 상태 선택 */}
           <div className="space-y-2">
-            <Label htmlFor="status">상태 <span className="text-red-500">*</span></Label>
+            <Label htmlFor="status">상태 <span className="text-destructive">*</span></Label>
             <Select 
               value={formData.status} 
               onValueChange={(value: 'active' | 'inactive') => setFormData(prev => ({ ...prev, status: value }))}
@@ -260,7 +241,7 @@ export default function PlatformModal({
 
           {/* 로그인 ID */}
           <div className="space-y-2">
-            <Label htmlFor="login_id">로그인 ID <span className="text-red-500">*</span></Label>
+            <Label htmlFor="login_id">로그인 ID <span className="text-destructive">*</span></Label>
             <Input
               id="login_id"
               type="text"
@@ -272,7 +253,7 @@ export default function PlatformModal({
 
           {/* 로그인 비밀번호 */}
           <div className="space-y-2">
-            <Label htmlFor="login_password">로그인 비밀번호 <span className="text-red-500">*</span></Label>
+            <Label htmlFor="login_password">로그인 비밀번호 <span className="text-destructive">*</span></Label>
             <Input
               id="login_password"
               type="password"
@@ -284,7 +265,7 @@ export default function PlatformModal({
 
           {/* 호텔명 */}
           <div className="space-y-2">
-            <Label htmlFor="hotel_name">호텔명 <span className="text-red-500">*</span></Label>
+            <Label htmlFor="hotel_name">호텔명 <span className="text-destructive">*</span></Label>
             <Input
               id="hotel_name"
               type="text"
@@ -342,7 +323,7 @@ export default function PlatformModal({
           </div>
 
           {error && (
-            <div className="text-sm text-red-500 bg-red-50 p-3 rounded-md">
+            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
               {error}
             </div>
           )}

@@ -3,7 +3,7 @@
 ## 개요
 호텔 상태 관리 시스템의 RESTful API 명세서입니다. 사용자 인증 및 호텔 플랫폼 로그인 정보 관리 기능을 제공합니다.
 
-- **Base URL**: `http://localhost:8080`
+- **Base URL**: `https://hotelstatus-95797723085.europe-west1.run.app`
 - **API Version**: 1.0.0
 - **인증 방식**: Bearer Token (JWT)
 

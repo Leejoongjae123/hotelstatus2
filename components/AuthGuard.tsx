@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/auth';
+import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
@@ -10,71 +10,38 @@ interface AuthGuardProps {
 }
 
 export default function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, token, logout, setUser } = useAuthStore();
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isValidating, setIsValidating] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // 토큰 유효성 검증 함수
-  const validateToken = async () => {
-    if (!token) return false;
+  useEffect(() => {
+    if (status === 'loading') return; // 로딩 중이면 대기
     
-    try {
-      const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
-        return true;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    // Zustand persist 미들웨어의 hydration 완료를 기다림
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading && isAuthenticated && token) {
-      // 토큰 유효성 검증
-      setIsValidating(true);
-      validateToken().then((isValid) => {
-        if (!isValid) {
-          logout();
-          router.push('/login');
-        }
-        setIsValidating(false);
-      });
-    } else if (!isLoading && (!isAuthenticated || !token)) {
+    if (status === 'unauthenticated') {
+      setIsRedirecting(true);
       router.push('/login');
     }
-  }, [isAuthenticated, token, router, isLoading, logout]);
+  }, [status, router]);
 
-  if (isLoading || isValidating || (!isAuthenticated || !token)) {
+  // 로딩 중이거나 리다이렉트 중일 때
+  if (status === 'loading' || isRedirecting) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
           <p className="text-sm text-muted-foreground">
-            {isValidating ? '토큰 검증 중...' : '인증 확인 중...'}
+            {isRedirecting ? '로그인 페이지로 이동 중...' : '인증 확인 중...'}
           </p>
         </div>
       </div>
     );
   }
 
+  // 인증되지 않은 경우
+  if (status === 'unauthenticated') {
+    return null; // 리다이렉트 중이므로 아무것도 렌더링하지 않음
+  }
+
+  // 인증된 경우에만 children 렌더링
   return <>{children}</>;
 } 

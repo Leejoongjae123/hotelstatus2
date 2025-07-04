@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuthStore } from '@/store/auth';
+import { useSession, signOut } from 'next-auth/react';
 import { 
   User, 
   FileText,
@@ -14,12 +14,12 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
 export default function Sidebar() {
-  const { user, logout } = useAuthStore();
+  const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
     router.push('/login');
   };
 
@@ -36,70 +36,64 @@ export default function Sidebar() {
     },
   ];
 
+  const isActive = (href: string) => {
+    return pathname === href;
+  };
+
   return (
-    <div className="w-64 h-full bg-card border-r border-border flex flex-col">
+    <div className="flex flex-col h-full bg-card border-r">
       {/* 헤더 */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center space-x-2">
+      <div className="p-6 border-b">
+        <div className="flex items-center gap-2">
           <Hotel className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-lg font-bold text-foreground">호텔 관리</h1>
-            <p className="text-sm text-muted-foreground">시스템</p>
-          </div>
+          <h1 className="text-xl font-bold">예약관리 솔루션</h1>
         </div>
       </div>
 
       {/* 사용자 정보 */}
-      {user && (
-        <div className="p-4 border-b border-border bg-muted/50">
-          <div className="flex items-center space-x-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {user.username}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user.email}
-              </p>
-            </div>
-
+      <div className="p-6 border-b w-full flex justify-center">
+        <div className="flex items-center gap-3 justify-center w-full">
+          
+          <div className="w-full flex flex-col justify-center items-center">
+            <p className="text-lg font-bold truncate">
+              {session?.user?.name || '사용자'}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {session?.user?.email}
+            </p>
           </div>
         </div>
-      )}
+        
+      </div>
 
       {/* 메뉴 */}
-      <nav className="flex-1 p-4 space-y-2">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          
-          return (
-            <Button
-              key={item.name}
-              variant={isActive ? "default" : "ghost"}
-              className={`w-full justify-start h-10 ${
-                isActive 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'hover:bg-accent hover:text-accent-foreground'
-              }`}
-              onClick={() => router.push(item.href)}
-            >
-              <Icon className="mr-3 h-4 w-4" />
-              {item.name}
-            </Button>
-          );
-        })}
-      </nav>
-
-      <Separator />
+      <div className="flex-1 p-4">
+        <nav className="space-y-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Button
+                key={item.href}
+                variant={isActive(item.href) ? "default" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => router.push(item.href)}
+              >
+                <Icon className="mr-2 h-4 w-4" />
+                {item.name}
+              </Button>
+            );
+          })}
+        </nav>
+      </div>
 
       {/* 로그아웃 */}
-      <div className="p-4">
-        <Button
-          variant="outline"
-          className="w-full justify-start h-10 text-destructive hover:text-destructive hover:bg-destructive/10"
+      <div className="p-4 border-t">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start text-destructive hover:text-destructive"
           onClick={handleLogout}
         >
-          <LogOut className="mr-3 h-4 w-4" />
+          <LogOut className="mr-2 h-4 w-4" />
           로그아웃
         </Button>
       </div>

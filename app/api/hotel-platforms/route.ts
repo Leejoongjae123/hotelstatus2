@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    const session = await getServerSession(authOptions);
 
-    if (!authHeader) {
+    if (!session?.accessToken) {
       return NextResponse.json(
-        { error: '인증 토큰이 필요합니다.' },
+        { error: '인증이 필요합니다.' },
         { status: 401 }
       );
     }
@@ -16,7 +18,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch(`${API_BASE_URL}/hotel-platforms`, {
       method: 'GET',
       headers: {
-        'Authorization': authHeader,
+        'Authorization': `Bearer ${session.accessToken}`,
         'Content-Type': 'application/json',
       },
     });
@@ -51,11 +53,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    const session = await getServerSession(authOptions);
 
-    if (!authHeader) {
+    if (!session?.accessToken) {
       return NextResponse.json(
-        { error: '인증 토큰이 필요합니다.' },
+        { error: '인증이 필요합니다.' },
         { status: 401 }
       );
     }
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${API_BASE_URL}/hotel-platforms`, {
       method: 'POST',
       headers: {
-        'Authorization': authHeader,
+        'Authorization': `Bearer ${session.accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),

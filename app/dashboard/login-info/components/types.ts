@@ -14,4 +14,15 @@ export interface PlatformModalProps {
   onClose: () => void;
   onSuccess: () => void;
   editingPlatform?: PlatformFormData & { id: number } | null;
+}
+
+// API 응답 구조 타입 추가
+export interface PlatformListResponse {
+  items: import('@/app/types').HotelPlatform[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
 } 

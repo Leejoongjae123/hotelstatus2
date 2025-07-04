@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '@/store/auth';
+import { useSession } from 'next-auth/react';
 import { HotelPlatform } from '@/app/types';
-import { PlatformFormData } from './types';
+import { PlatformFormData, PlatformListResponse } from './types';
 import PlatformModal from './PlatformModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { Loader2, RefreshCw, Eye, EyeOff, MoreHorizontal, Edit, Trash2, Plus, Search, X } from 'lucide-react';
 
 export default function LoginInfoTable() {
@@ -35,11 +45,21 @@ export default function LoginInfoTable() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlatform, setEditingPlatform] = useState<(PlatformFormData & { id: number }) | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const { token } = useAuthStore();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [platformToDelete, setPlatformToDelete] = useState<HotelPlatform | null>(null);
+  
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
+  
+  const { data: session } = useSession();
 
   useEffect(() => {
     fetchPlatforms();
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -56,15 +76,11 @@ export default function LoginInfoTable() {
   }, [platforms, searchTerm]);
 
   const fetchPlatforms = async () => {
-    if (!token) return;
+    if (!session) return;
 
     try {
       setLoading(true);
-      const response = await fetch('/api/hotel-platforms', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(`/api/hotel-platforms?page=${currentPage}&limit=10`);
 
       const data = await response.json();
 
@@ -83,7 +99,12 @@ export default function LoginInfoTable() {
         return;
       }
 
-      setPlatforms(data);
+      const platformData = data as PlatformListResponse;
+      setPlatforms(platformData.items);
+      setTotalPages(platformData.total_pages);
+      setTotalItems(platformData.total);
+      setHasNext(platformData.has_next);
+      setHasPrev(platformData.has_prev);
     } catch (error) {
       setError('서버 오류가 발생했습니다.');
     } finally {
@@ -92,14 +113,10 @@ export default function LoginInfoTable() {
   };
 
   const fetchPlatformDetails = async (platformId: number): Promise<HotelPlatform | null> => {
-    if (!token) return null;
+    if (!session) return null;
 
     try {
-      const response = await fetch(`/api/hotel-platforms/${platformId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(`/api/hotel-platforms/${platformId}`);
 
       if (!response.ok) return null;
       
@@ -128,20 +145,18 @@ export default function LoginInfoTable() {
     }
   };
 
-  const handleDelete = async (platformId: number) => {
-    if (!token) return;
+  const handleDelete = (platform: HotelPlatform) => {
+    setPlatformToDelete(platform);
+    setIsDeleteModalOpen(true);
+  };
 
-    if (!confirm('정말로 이 플랫폼 정보를 삭제하시겠습니까?')) {
-      return;
-    }
+  const handleDeleteConfirm = async () => {
+    if (!session || !platformToDelete) return;
 
     try {
-      setDeletingId(platformId);
-      const response = await fetch(`/api/hotel-platforms/${platformId}`, {
+      setDeletingId(platformToDelete.id);
+      const response = await fetch(`/api/hotel-platforms/${platformToDelete.id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
       });
 
       if (!response.ok) {
@@ -158,16 +173,23 @@ export default function LoginInfoTable() {
           }
         }
         
-        alert(errorMessage);
+        setError(errorMessage);
         return;
       }
 
       await fetchPlatforms(); // 목록 새로고침
+      setIsDeleteModalOpen(false);
+      setPlatformToDelete(null);
     } catch (error) {
-      alert('서버 오류가 발생했습니다.');
+      setError('서버 오류가 발생했습니다.');
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleDeleteModalClose = () => {
+    setIsDeleteModalOpen(false);
+    setPlatformToDelete(null);
   };
 
   const handleModalSuccess = () => {
@@ -181,17 +203,23 @@ export default function LoginInfoTable() {
   };
 
   const handleSearch = () => {
-    // 검색은 useEffect에서 자동으로 처리됨
+    // 검색 시 첫 페이지로 이동
+    setCurrentPage(1);
   };
 
   const handleClearSearch = () => {
     setSearchTerm('');
+    setCurrentPage(1);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   const getPlatformName = (platform: string) => {
@@ -345,6 +373,13 @@ export default function LoginInfoTable() {
               </div>
             )}
           </div>
+
+          {/* 페이지네이션 정보 */}
+          <div className="pt-4">
+            <div className="text-sm text-muted-foreground">
+              전체 {totalItems}개 중 {((currentPage - 1) * 10) + 1}-{Math.min(currentPage * 10, totalItems)}개 표시
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {filteredPlatforms.length === 0 ? (
@@ -364,132 +399,191 @@ export default function LoginInfoTable() {
               )}
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>플랫폼</TableHead>
-                    <TableHead>상태</TableHead>
-                    <TableHead>로그인 ID</TableHead>
-                    <TableHead>로그인 비밀번호</TableHead>
-                    <TableHead>호텔명</TableHead>
-                    <TableHead>MFA ID</TableHead>
-                    <TableHead>MFA 비밀번호</TableHead>
-                    <TableHead>MFA 플랫폼</TableHead>
-                    <TableHead className="w-[50px]">작업</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPlatforms.map((platform) => (
-                    <TableRow key={platform.id}>
-                      <TableCell>
-                        <Badge variant={getPlatformBadgeVariant(platform.platform)}>
-                          {getPlatformName(platform.platform)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(platform.status || 'active')}>
-                          {getStatusName(platform.status || 'active')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {platform.login_id}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-mono text-sm">
-                            {showPasswords[`${platform.id}-login`] 
-                              ? platform.login_password || '••••••••'
-                              : '••••••••'
-                            }
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => togglePasswordVisibility(platform.id.toString(), 'login')}
-                          >
-                            {showPasswords[`${platform.id}-login`] 
-                              ? <EyeOff className="h-3 w-3" />
-                              : <Eye className="h-3 w-3" />
-                            }
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {platform.hotel_name}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {platform.mfa_id || <span className="text-muted-foreground">-</span>}
-                      </TableCell>
-                      <TableCell>
-                        {platform.mfa_password ? (
-                          <div className="flex items-center space-x-2">
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-center">플랫폼</TableHead>
+                      <TableHead className="text-center">상태</TableHead>
+                      <TableHead className="text-center">로그인 ID</TableHead>
+                      <TableHead className="text-center">로그인 비밀번호</TableHead>
+                      <TableHead className="text-center">호텔명</TableHead>
+                      <TableHead className="text-center">MFA ID</TableHead>
+                      <TableHead className="text-center">MFA 비밀번호</TableHead>
+                      <TableHead className="text-center">MFA 플랫폼</TableHead>
+                      <TableHead className="w-[50px] text-center">작업</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPlatforms.map((platform) => (
+                      <TableRow key={platform.id}>
+                        <TableCell className="text-center">
+                          <Badge variant={getPlatformBadgeVariant(platform.platform)}>
+                            {getPlatformName(platform.platform)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={getStatusBadgeVariant(platform.status || 'active')}>
+                            {getStatusName(platform.status || 'active')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-sm text-center">
+                          {platform.login_id}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center space-x-2">
                             <span className="font-mono text-sm">
-                              {showPasswords[`${platform.id}-mfa`] 
-                                ? platform.mfa_password
+                              {showPasswords[`${platform.id}-login`] 
+                                ? platform.login_password || '••••••••'
                                 : '••••••••'
                               }
                             </span>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => togglePasswordVisibility(platform.id.toString(), 'mfa')}
+                              onClick={() => togglePasswordVisibility(platform.id.toString(), 'login')}
                             >
-                              {showPasswords[`${platform.id}-mfa`] 
+                              {showPasswords[`${platform.id}-login`] 
                                 ? <EyeOff className="h-3 w-3" />
                                 : <Eye className="h-3 w-3" />
                               }
                             </Button>
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {platform.mfa_platform ? (
-                          <Badge variant="outline" className="text-xs">
-                            {platform.mfa_platform}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              disabled={deletingId === platform.id}
-                            >
-                              {deletingId === platform.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <MoreHorizontal className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(platform)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              수정
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(platform.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              삭제
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        </TableCell>
+                        <TableCell className="font-medium text-center">
+                          {platform.hotel_name}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm text-center">
+                          {platform.mfa_id || <span className="text-muted-foreground">-</span>}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {platform.mfa_password ? (
+                            <div className="flex items-center justify-center space-x-2">
+                              <span className="font-mono text-sm">
+                                {showPasswords[`${platform.id}-mfa`] 
+                                  ? platform.mfa_password
+                                  : '••••••••'
+                                }
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => togglePasswordVisibility(platform.id.toString(), 'mfa')}
+                              >
+                                {showPasswords[`${platform.id}-mfa`] 
+                                  ? <EyeOff className="h-3 w-3" />
+                                  : <Eye className="h-3 w-3" />
+                                }
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {platform.mfa_platform ? (
+                            <Badge variant="outline" className="text-xs">
+                              {platform.mfa_platform}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                disabled={deletingId === platform.id}
+                              >
+                                {deletingId === platform.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <MoreHorizontal className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEdit(platform)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                수정
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(platform)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                삭제
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* 페이지네이션 */}
+              <div className="flex justify-center mt-6">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        className={!hasPrev ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: Math.max(1, totalPages) }, (_, i) => i + 1).map((page) => {
+                      // 현재 페이지 주변의 페이지들만 표시
+                      const shouldShow = 
+                        page === 1 || 
+                        page === totalPages || 
+                        (page >= currentPage - 2 && page <= currentPage + 2);
+                      
+                      if (!shouldShow && totalPages > 1) {
+                        // 생략 표시
+                        if (page === currentPage - 3 || page === currentPage + 3) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      }
+
+                                             return (
+                         <PaginationItem key={page}>
+                           <PaginationLink
+                             onClick={() => handlePageChange(page)}
+                             isActive={currentPage === page}
+                             className={`cursor-pointer ${
+                               currentPage === page 
+                                 ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                 : 'bg-white hover:bg-gray-50'
+                             }`}
+                           >
+                             {page}
+                           </PaginationLink>
+                         </PaginationItem>
+                       );
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        className={!hasNext ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -499,6 +593,14 @@ export default function LoginInfoTable() {
         onClose={handleModalClose}
         onSuccess={handleModalSuccess}
         editingPlatform={editingPlatform}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleDeleteModalClose}
+        onConfirm={handleDeleteConfirm}
+        platformName={platformToDelete ? getPlatformName(platformToDelete.platform) : ''}
+        hotelName={platformToDelete ? platformToDelete.hotel_name : ''}
       />
     </>
   );
