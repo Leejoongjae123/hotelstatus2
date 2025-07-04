@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 py-4">
       {/* 헤더 */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">대시보드</h1>

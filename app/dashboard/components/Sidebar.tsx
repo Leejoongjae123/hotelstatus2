@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useSidebarStore } from '@/store/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-
+import Link from 'next/link';
 export default function Sidebar() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -66,10 +66,12 @@ export default function Sidebar() {
       <div className="flex flex-col h-full bg-card border-r w-64">
         {/* 헤더 */}
         <div className="p-6 border-b">
+          <Link href="/dashboard">
           <div className="flex items-center gap-2">
             <Hotel className="h-8 w-8 text-primary" />
             <h1 className="text-xl font-bold">예약관리 솔루션</h1>
           </div>
+          </Link>
         </div>
 
         {/* 사용자 정보 */}
@@ -139,10 +141,12 @@ export default function Sidebar() {
       `}>
         {/* 헤더 */}
         <div className="p-6 border-b flex items-center justify-between">
+          <Link href="/dashboard">
           <div className="flex items-center gap-2">
             <Hotel className="h-8 w-8 text-primary" />
             <h1 className="text-lg font-bold">예약관리 솔루션</h1>
           </div>
+          </Link>
           <Button
             variant="ghost"
             size="icon"
