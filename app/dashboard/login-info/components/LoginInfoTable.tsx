@@ -327,19 +327,22 @@ export default function LoginInfoTable() {
     <>
       <Card>
         <CardHeader>
-            <Button
-              onClick={() => setIsModalOpen(true)}
-              size="sm"
-              className="h-8 w-46"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              로그인 정보 추가
-            </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                size="sm"
+                className="h-10 w-full sm:w-auto"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                로그인 정보 추가
+              </Button>
+            </div>
+          </div>
 
-          
           {/* 검색 섹션 */}
           <div className="pt-4">
-            <div className="flex gap-4">
+            <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1 space-y-2">
                 <label htmlFor="search" className="text-sm font-medium leading-none">
                   검색
@@ -368,13 +371,13 @@ export default function LoginInfoTable() {
                   )}
                 </div>
               </div>
-              <div className="flex items-end space-x-2">
-                <Button onClick={handleSearch} className="h-10">
+              <div className="flex flex-col sm:flex-row lg:items-end space-y-2 sm:space-y-0 sm:space-x-2">
+                <Button onClick={handleSearch} className="h-10 w-full sm:w-auto">
                   <Search className="h-4 w-4 mr-2" />
                   검색
                 </Button>
                 {searchTerm && (
-                  <Button onClick={handleClearSearch} variant="outline" className="h-10">
+                  <Button onClick={handleClearSearch} variant="outline" className="h-10 w-full sm:w-auto">
                     <X className="h-4 w-4 mr-2" />
                     초기화
                   </Button>

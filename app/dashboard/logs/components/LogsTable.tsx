@@ -267,8 +267,8 @@ export default function LogsTable() {
 
         {/* 검색 및 필터 섹션 */}
         <div className="space-y-4 mt-4">
-          <div className="grid grid-cols-10 gap-4">
-            <div className="col-span-8 space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
+            <div className="md:col-span-8 space-y-2">
               <label htmlFor="search" className="text-sm font-medium leading-none">
                 로그 검색
               </label>
@@ -297,7 +297,7 @@ export default function LogsTable() {
               </div>
             </div>
             
-            <div className="col-span-1 space-y-2">
+            <div className="md:col-span-1 space-y-2">
               <label className="text-sm font-medium leading-none">
                 에이전트
               </label>
@@ -322,7 +322,7 @@ export default function LogsTable() {
               </Select>
             </div>
             
-            <div className="col-span-1 space-y-2">
+            <div className="md:col-span-1 space-y-2">
               <label className="text-sm font-medium leading-none">
                 결과
               </label>
@@ -448,57 +448,61 @@ export default function LogsTable() {
             </div>
 
             {/* 페이지네이션 */}
-            {totalPages > 1 && (
-              <div className="mt-6">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() => hasPrev && handlePageChange(currentPage - 1)}
-                        className={!hasPrev ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                      />
-                    </PaginationItem>
+            <div className="flex justify-center mt-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      className={!hasPrev ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: Math.max(1, totalPages) }, (_, i) => i + 1).map((page) => {
+                    // 현재 페이지 주변의 페이지들만 표시
+                    const shouldShow = 
+                      page === 1 || 
+                      page === totalPages || 
+                      (page >= currentPage - 2 && page <= currentPage + 2);
                     
-                    {[...Array(totalPages)].map((_, index) => {
-                      const page = index + 1;
-                      const isCurrentPage = page === currentPage;
-                      const showPage = page === 1 || page === totalPages || 
-                                     (page >= currentPage - 1 && page <= currentPage + 1);
-                      
-                      if (!showPage) {
-                        if (page === currentPage - 2 || page === currentPage + 2) {
-                          return (
-                            <PaginationItem key={page}>
-                              <PaginationEllipsis />
-                            </PaginationItem>
-                          );
-                        }
-                        return null;
+                    if (!shouldShow && totalPages > 1) {
+                      // 생략 표시
+                      if (page === currentPage - 3 || page === currentPage + 3) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
                       }
-                      
-                      return (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            onClick={() => handlePageChange(page)}
-                            isActive={isCurrentPage}
-                            className="cursor-pointer"
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    })}
-                    
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() => hasNext && handlePageChange(currentPage + 1)}
-                        className={!hasNext ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
+                      return null;
+                    }
+
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => handlePageChange(page)}
+                          isActive={currentPage === page}
+                          className={`cursor-pointer ${
+                            currentPage === page 
+                              ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                              : 'bg-white hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      className={!hasNext ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
           </>
         )}
       </CardContent>
