@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // 정적 파일이나 API 경로는 제외
@@ -20,12 +20,14 @@ export function middleware(request: NextRequest) {
   const protectedPaths = ['/dashboard'];
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
 
+  // 로그인 페이지에 토큰이 있는 사용자가 접근하는 경우
+  if (pathname === '/login' && token) {
+    const dashboardUrl = new URL('/dashboard', request.url);
+    return NextResponse.redirect(dashboardUrl);
+  }
+
   // 인증이 필요한 경로에 토큰이 없는 경우
   if (isProtectedPath && !token) {
-    // 이미 로그인 페이지로 가고 있다면 무한 리다이렉트 방지
-    if (pathname === '/login') {
-      return NextResponse.next();
-    }
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -39,16 +41,6 @@ export function middleware(request: NextRequest) {
       const loginUrl = new URL('/login', request.url);
       return NextResponse.redirect(loginUrl);
     }
-  }
-
-  // 로그인 페이지에 토큰이 있는 사용자가 접근하는 경우
-  if (pathname === '/login' && token) {
-    // 이미 대시보드로 가고 있다면 무한 리다이렉트 방지
-    if (pathname.startsWith('/dashboard')) {
-      return NextResponse.next();
-    }
-    const dashboardUrl = new URL('/dashboard', request.url);
-    return NextResponse.redirect(dashboardUrl);
   }
 
   return NextResponse.next();
