@@ -15,7 +15,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${API_BASE_URL}/hotel-platforms`, {
+    // URL에서 쿼리 파라미터 추출
+    const { searchParams } = new URL(request.url);
+    const page = searchParams.get('page') || '1';
+    const limit = searchParams.get('limit') || '10';
+
+    const response = await fetch(`${API_BASE_URL}/hotel-platforms?page=${page}&limit=${limit}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,

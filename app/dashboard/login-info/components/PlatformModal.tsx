@@ -105,7 +105,7 @@ export default function PlatformModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!session) {
+    if (!session?.accessToken) {
       setError('인증이 필요합니다.');
       return;
     }
@@ -142,6 +142,7 @@ export default function PlatformModal({
       const response = await fetch(url, {
         method,
         headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),

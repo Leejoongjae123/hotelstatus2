@@ -76,11 +76,16 @@ export default function LoginInfoTable() {
   }, [platforms, searchTerm]);
 
   const fetchPlatforms = async () => {
-    if (!session) return;
+    if (!session?.accessToken) return;
 
     try {
       setLoading(true);
-      const response = await fetch(`/api/hotel-platforms?page=${currentPage}&limit=10`);
+      const response = await fetch(`/api/hotel-platforms?page=${currentPage}&limit=10`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
       const data = await response.json();
 
@@ -113,10 +118,15 @@ export default function LoginInfoTable() {
   };
 
   const fetchPlatformDetails = async (platformId: number): Promise<HotelPlatform | null> => {
-    if (!session) return null;
+    if (!session?.accessToken) return null;
 
     try {
-      const response = await fetch(`/api/hotel-platforms/${platformId}`);
+      const response = await fetch(`/api/hotel-platforms/${platformId}`, {
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) return null;
       
@@ -151,12 +161,16 @@ export default function LoginInfoTable() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!session || !platformToDelete) return;
+    if (!session?.accessToken || !platformToDelete) return;
 
     try {
       setDeletingId(platformToDelete.id);
       const response = await fetch(`/api/hotel-platforms/${platformToDelete.id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
