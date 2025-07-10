@@ -63,6 +63,8 @@ export default function LogsTable() {
         (log.ota_place_name && log.ota_place_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (log.guest_name && log.guest_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (log.reserve_no && log.reserve_no.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (log.accom_id && log.accom_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (log.room_reserve_id && log.room_reserve_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (log.platform && log.platform.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (log.description && log.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (log.error_message && log.error_message.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -280,7 +282,7 @@ export default function LogsTable() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="호텔명, 게스트명, 예약번호, 플랫폼, 설명, 오류 메시지로 검색하세요"
+                  placeholder="호텔명, 게스트명, 예약번호, 숙소ID, 객실예약ID, 플랫폼, 설명, 오류 메시지로 검색하세요"
                   className="pl-10 pr-10"
                 />
                 {searchTerm && (
@@ -559,6 +561,14 @@ export default function LogsTable() {
                       <label className="text-sm font-medium text-muted-foreground">예약번호</label>
                       <p className="text-sm">{selectedLog.reserve_no || '-'}</p>
                     </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">숙소 ID</label>
+                      <p className="text-sm font-mono">{selectedLog.accom_id || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">객실 예약 ID</label>
+                      <p className="text-sm font-mono">{selectedLog.room_reserve_id || '-'}</p>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -650,20 +660,20 @@ export default function LogsTable() {
                 </Card>
               )}
 
-              {/* 추가 정보 */}
+              {/* 시스템 정보 */}
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">추가 정보</CardTitle>
+                  <CardTitle className="text-base">시스템 정보</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">로그 ID</label>
-                      <p>{selectedLog.id}</p>
+                      <p className="font-mono">{selectedLog.id}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">사용자 ID</label>
-                      <p>{selectedLog.user_id || '-'}</p>
+                      <p className="font-mono">{selectedLog.user_id || '-'}</p>
                     </div>
                     {selectedLog.created_at && (
                       <div className="col-span-2">

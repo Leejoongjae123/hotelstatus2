@@ -12,7 +12,7 @@ export interface User {
 export interface HotelPlatform {
   id: number;
   user_id: number;
-  platform: string;
+  platform: PlatformType;
   login_id: string;
   login_password?: string;
   hotel_name: string;
@@ -32,4 +32,15 @@ export interface LoginResponse {
 export interface Platform {
   value: string;
   name: string;
-} 
+}
+
+// 플랫폼 타입 정의
+export type PlatformType = 
+  | 'YANOLJA'
+  | 'GOOD_CHOICE'
+  | 'GOOD_CHOICE_HOTEL'
+  | 'NAVER'
+  | 'AIR_BNB'
+  | 'AGODA'
+  | 'BOOKING_HOLDINGS'
+  | 'EXPEDIA'; 

@@ -40,6 +40,8 @@ export async function GET(request: NextRequest) {
           {
             id: 1,
             user_id: "test-user-id",
+            accom_id: "ACCOM_001",
+            room_reserve_id: "ROOM_RES_001",
             ota_place_name: "테스트 호텔",
             prepaid: 50000,
             fee: 70000,
@@ -70,6 +72,8 @@ export async function GET(request: NextRequest) {
           {
             id: 2,
             user_id: "test-user-id",
+            accom_id: "ACCOM_002",
+            room_reserve_id: "ROOM_RES_002",
             ota_place_name: "부산 비즈니스 호텔",
             prepaid: 80000,
             fee: 90000,

@@ -1,6 +1,8 @@
 export interface Log {
   id: number;
   user_id: string;
+  accom_id?: string;
+  room_reserve_id?: string;
   ota_place_name?: string;
   prepaid?: number;
   fee?: number;

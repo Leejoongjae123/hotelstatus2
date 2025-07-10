@@ -1,5 +1,5 @@
 export interface PlatformFormData {
-  platform: string;
+  platform: import('@/app/types').PlatformType;
   login_id: string;
   login_password: string;
   hotel_name: string;

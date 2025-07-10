@@ -23,16 +23,16 @@ import {
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 
-// 기본 플랫폼 목록을 상수로 정의
+// 기본 플랫폼 목록을 상수로 정의 (새로운 API 값 사용)
 const DEFAULT_PLATFORMS: Platform[] = [
-  { value: '야놀자', name: '야놀자' },
-  { value: '여기어때_사장님', name: '여기어때_사장님' },
-  { value: '여기어때_파트너', name: '여기어때_파트너' },
-  { value: '네이버', name: '네이버' },
-  { value: '에어비앤비', name: '에어비앤비' },
-  { value: '아고다', name: '아고다' },
-  { value: '부킹닷컴', name: '부킹닷컴' },
-  { value: '익스피디아', name: '익스피디아' }
+  { value: 'YANOLJA', name: '야놀자' },
+  { value: 'GOOD_CHOICE', name: '여기어때_사장님' },
+  { value: 'GOOD_CHOICE_HOTEL', name: '여기어때_파트너' },
+  { value: 'NAVER', name: '네이버' },
+  { value: 'AIR_BNB', name: '에어비앤비' },
+  { value: 'AGODA', name: '아고다' },
+  { value: 'BOOKING_HOLDINGS', name: '부킹닷컴' },
+  { value: 'EXPEDIA', name: '익스피디아' }
 ];
 
 export default function PlatformModal({ 

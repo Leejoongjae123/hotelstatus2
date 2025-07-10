@@ -238,6 +238,15 @@ export default function LoginInfoTable() {
 
   const getPlatformName = (platform: string) => {
     const platformNames: { [key: string]: string } = {
+      'YANOLJA': '야놀자',
+      'GOOD_CHOICE': '여기어때_사장님',
+      'GOOD_CHOICE_HOTEL': '여기어때_파트너',
+      'NAVER': '네이버',
+      'AIR_BNB': '에어비앤비',
+      'AGODA': '아고다',
+      'BOOKING_HOLDINGS': '부킹닷컴',
+      'EXPEDIA': '익스피디아',
+      // 기존 값들도 호환성을 위해 유지
       'booking_com': '부킹닷컴',
       'agoda': '아고다',
       'expedia': '익스피디아',
@@ -279,6 +288,15 @@ export default function LoginInfoTable() {
 
   const getPlatformBadgeVariant = (platform: string) => {
     const variants: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
+      'YANOLJA': 'default',
+      'GOOD_CHOICE': 'secondary',
+      'GOOD_CHOICE_HOTEL': 'outline',
+      'NAVER': 'default',
+      'AIR_BNB': 'secondary',
+      'AGODA': 'outline',
+      'BOOKING_HOLDINGS': 'default',
+      'EXPEDIA': 'secondary',
+      // 기존 값들도 호환성을 위해 유지
       'booking_com': 'default',
       'agoda': 'secondary',
       'expedia': 'outline',
