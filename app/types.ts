@@ -36,6 +36,7 @@ export interface Platform {
 
 // 플랫폼 타입 정의
 export type PlatformType = 
+  | ''
   | 'YANOLJA'
   | 'GOOD_CHOICE'
   | 'GOOD_CHOICE_HOTEL'

@@ -204,7 +204,7 @@ export default function PlatformModal({
             ) : (
               <Select 
                 value={formData.platform} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, platform: value }))}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, platform: value as import('@/app/types').PlatformType }))}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="플랫폼을 선택해주세요" />
