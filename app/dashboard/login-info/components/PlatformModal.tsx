@@ -280,6 +280,7 @@ export default function PlatformModal({
           <div className="space-y-4 border-t pt-4">
             <h4 className="text-sm font-medium">MFA 정보 (선택사항)</h4>
             
+            
             <div className="space-y-2">
               <Label htmlFor="mfa_id">MFA ID</Label>
               <Input
